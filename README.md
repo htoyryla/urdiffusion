@@ -3,16 +3,16 @@ Your own diffusion with small, private datasets
 
 ## requirements 
 
-pytorch, torchvision, cudatoolkit
-numpy
-PIL
-pytorch_mssim
-argparse
-tqdm
-einops
-diffusers
-CLIP
-opencv (imported but not currently used)
+* pytorch, torchvision, cudatoolkit
+* numpy
+* PIL
+* pytorch_mssim
+* argparse
+* tqdm
+* einops
+* diffusers
+* CLIP
+* opencv (imported but not currently used)
 
 ## how to get started
 
