@@ -44,6 +44,37 @@ You can also enable postprocessing on the generated image using --postproc, whic
 ```
 python urdifs.py --dir test/ --name portr --eta 0.5 --steps 100  --modelSize 512 --w 768  --h 768 --text "an abstract portrait" --textw 50 --lr 10  --load test/model-230.pt --image /home/hannu/Pictures/hft269e-adjusted.png --skip 10 --ema --postproc  --eqhist 0.5 --noise 0. --contrast 1 --gamma 0.8  --unsharp 2  --saturation 1
 ```
+## training
+
+To train a model you need a dataset of images. I typically use sets from a hundred to 10 000 images, starting training from a pretrained one and training from a few hours to a day or two on a single 3090. Training works best when the images are visually reasonably similar, i.e. we are training with visual features rather than content. 
+
+Example
+
+```
+python urdiftrainer.py --images /work4/mat/fadedmem/ --lr 8e-5 --steps 1000 --accum 10 --dir test/ --imageSize 512 --batchSize 2 --saveEvery 100 --nsamples 2 --mults 1 1 2 2 4 4 8 8 --model unet2  --load /work/owntest/mdif2/md2-un2-od0-h2pa-ddims2/model-230.pt --losstype l1
+```
+
+## Tiled generation
+
+```
+python urdifstile.py --dir test/ --name ptiles2 --eta 0.5 --steps 100  --w 1024  --h 1024 --model unet2 --mults 1 1 2 2 4 4 8 8 --text "abstract geometric planes and shapes" --textw 50 --lr 10  --load path-to-your-model --image path-to-your-image(s) --skip 10 --eqhist 0.5 --noise 0. --contrast 0.7 --gamma 1 --postproc --unsharp 2  --saturation 1.2 --ema --rsort --weak 30  --tilemin 512 --grid
+```
+
+Here we are doing img2img generation of a larger image, tile by tile, with no attempt to blend image borders, but rather enjoying the mosaic or tiled wall like result.
+
+Here, tiles are 512x512 and the full canvas is 1024x1024.You can experiment with different tile and canvas size.
+
+Param --weak is used here to give a somewhat softer look. 
+
+Now that we are converting images from a folder, I have used --rsort to process them in random order.  
+ 
+
+<img src="https://github.com/htoyryla/urdiffusion/assets/15064373/866c9314-d0f5-4c58-af3b-4d232e8e9d42" width="512px">
+
+
+
+
+
 
 
 
