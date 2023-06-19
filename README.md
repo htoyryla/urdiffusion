@@ -25,10 +25,10 @@ In practice, you can ignore (leave out) settings like model and mults, unless yo
 --textw prompt weight
 
 
-![portr2-1-final](https://github.com/htoyryla/urdiffusion/assets/15064373/6fdd4d70-1827-4305-a961-7df24b7405cb width=320)
+![portr2-1-final](https://github.com/htoyryla/urdiffusion/assets/15064373/6fdd4d70-1827-4305-a961-7df24b7405cb | width=320px)
 
 
-![portr-1-finalp](https://github.com/htoyryla/urdiffusion/assets/15064373/ee14b08a-7dab-4914-b40e-9056cf9e7dc3 width=320)
+![portr-1-finalp](https://github.com/htoyryla/urdiffusion/assets/15064373/ee14b08a-7dab-4914-b40e-9056cf9e7dc3 | width=320px)
 
 
 
