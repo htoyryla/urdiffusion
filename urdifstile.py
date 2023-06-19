@@ -68,7 +68,7 @@ parser.add_argument('--high', type=float, default=1.0, help='higher limit for cu
 parser.add_argument('--cutn', type=int, default=24, help='number of cutouts for CLIP')
 parser.add_argument('--load', type=str, default="", help='path to pt file')
 parser.add_argument('--saveiters', action="store_true", help='')
-parser.add_argument('--mults', type=int, nargs='*', default=[1, 1, 2, 2, 4, 8, 8], help='')
+parser.add_argument('--mults', type=int, nargs='*', default=[1, 1, 2, 2, 4, 4, 8, 8], help='')
 parser.add_argument('--weak', type=int, default=0, help='weaken init image')
 parser.add_argument('--model', type=str, default="unet2", help='model architecture: unet0, unet1, unet2, unetcn0')
 parser.add_argument('--spher', action="store_true", help='use spherical loss')
