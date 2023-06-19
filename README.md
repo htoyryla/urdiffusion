@@ -1,6 +1,19 @@
 # urdiffusion
 Your own diffusion with small, private datasets 
 
+## requirements 
+
+pytorch, torchvision, cudatoolkit
+numpy
+PIL
+pytorch_mssim
+argparse
+tqdm
+einops
+diffusers
+CLIP
+opencv (imported but not currently used)
+
 ## how to get started
 
 Get model-230.pt to start with from https://drive.google.com/drive/folders/1s4fBeZvr23ma-a6eZMQqgeICyxiku6y_?usp=sharing
