@@ -33,9 +33,9 @@ parser.add_argument('--losstype', type=str, default="l2", help='loss type: l1 or
 
 parser.add_argument('--load', type=str, default="", help='path to pth file')
 parser.add_argument('--nostrict', action="store_true", help='')
-parser.add_argument('--mults', type=int, nargs='*', default=[1, 1, 2, 2, 4, 8], help='')
+parser.add_argument('--mults', type=int, nargs='*', default=[1, 1, 2, 2, 4, 4, 8, 8], help='')
 parser.add_argument('--nsamples', type=int, default=2, help='how many samples to generate')
-parser.add_argument('--model', type=str, default="unet1", help='model architecture: unet0, unetok5, unet1,unetcn0')
+parser.add_argument('--model', type=str, default="unet2", help='model architecture: unet0, unetok5, unet1,unetcn0')
 
 opt = parser.parse_args()
 
