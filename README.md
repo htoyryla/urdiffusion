@@ -39,3 +39,11 @@ In practice, you can ignore (leave out) settings like model and mults, unless yo
 <img src="https://github.com/htoyryla/urdiffusion/assets/15064373/ee14b08a-7dab-4914-b40e-9056cf9e7dc3" width="320px">
 
 
+You can also enable postprocessing on the generated image using --postproc, which gives access to many additional settings:
+
+```
+python urdifs.py --dir test/ --name portr --eta 0.5 --steps 100  --modelSize 512 --w 768  --h 768 --text "an abstract portrait" --textw 50 --lr 10  --load test/model-230.pt --image /home/hannu/Pictures/hft269e-adjusted.png --skip 10 --ema --postproc  --eqhist 0.5 --noise 0. --contrast 1 --gamma 0.8  --unsharp 2  --saturation 1
+```
+
+
+
