@@ -74,7 +74,7 @@ To train a model you need a dataset of images. I typically use sets from a hundr
 Example
 
 ```
-python urdiftrainer.py --images /work4/mat/fadedmem/ --lr 8e-5 --steps 1000 --accum 10 --dir test/ --imageSize 512 --batchSize 2 --saveEvery 100 --nsamples 2 --mults 1 1 2 2 4 4 8 8 --model unet2  --load /work/owntest/mdif2/md2-un2-od0-h2pa-ddims2/model-230.pt --losstype l1
+python urdiftrainer.py --images /work4/mat/fadedmem/ --lr 8e-5 --steps 1000 --accum 10 --dir test/ --imageSize 512 --batchSize 2 --saveEvery 100 --nsamples 2 --mults 1 1 2 2 4 4 8 8 --model unet2  --load test/model-230.pt --losstype l1
 ```
 
 ## Tiled generation
