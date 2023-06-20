@@ -94,6 +94,15 @@ Now that we are converting images from a folder, I have used --rsort to process 
 
 <img src="https://github.com/htoyryla/urdiffusion/assets/15064373/866c9314-d0f5-4c58-af3b-4d232e8e9d42" width="512px">
 
+## model interpolation
+
+If we think of urdiffusion models as something like styles, it also makes sense to think of mixing them. You can do this using model interpolation script to mix two models into a new model:
+
+```
+python interpolate_models.py --m1 squares/model-490.pt --m2 fadedmem/model-550.pt --out squares-fadedmem-08.pt --beta 0.8
+```
+
+
 
 
 
