@@ -461,13 +461,15 @@ for inp in inputlist:
     #pass
       
     imTf = putTile(imTf, tile, im.cpu().detach()) 
-    save_image(imTf, opt.dir+"/"+name+"-"+str(ctr)+"finalp.png")      
+    #save_image(imTf, opt.dir+"/"+name+"-"+str(ctr)+"finalp.png")      
 
     im_ = imTf.clone().cpu()
     if opt.postproc:
       im_ = pprocess(im_, opt) 
       im_ -= im_.min()
       im_ /= im_.max()
+
+    save_image(im_, opt.dir+"/"+name+"-"+str(ctr)+"finalp.png")  
 
     if opt.latest:
       save_image(im_, "/var/www/html/latest.jpg")
