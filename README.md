@@ -9,7 +9,7 @@ It is possible to train a limited range model with a small dataset of visually s
 
 When you start guiding such a model with init images and prompts, it is best to start with an open mind, clear of expectations. There is bound to be a tension as to what the guidance from the prompt seems to require and what the model is able to produce. This very tension is the core creative element in urdiffusion. Experiment how the model reacts to the guidance, depending on the image material used in training. The results may be far different from what you expected, but you are still likely to find interesting and useful results and styles. Train new models and experiment with different materials, find out what works for you, collect your own model library.
 
-<img src="https://github.com/htoyryla/urdiffusion/assets/15064373/beca5e0c-e27e-4402-b8d7-fef8acf24c60" width="640px">
+<img src="https://github.com/htoyryla/urdiffusion/assets/15064373/beca5e0c-e27e-4402-b8d7-fef8acf24c60" width="720px">
 
 ## requirements 
 
