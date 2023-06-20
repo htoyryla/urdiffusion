@@ -71,6 +71,9 @@ python urdifs.py --dir test/ --name portr --eta 0.5 --steps 100  --modelSize 512
 
 To train a model you need a dataset of images. I typically use sets from a hundred to 10 000 images, starting training from a pretrained one and training from a few hours to a day or two on a single 3090. Training works best when the images are visually reasonably similar, i.e. we are training with visual features rather than content. 
 
+Note: the dataset should simply be a folder containing images (ie. no subfolders).
+
+
 Example
 
 ```
