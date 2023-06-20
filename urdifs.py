@@ -315,7 +315,7 @@ if os.path.isdir(opt.image):
       if not ext in ['jpg', 'jpeg', 'png', 'tiff', 'tif']:
         continue
         
-      fpath = opt.image+"/"+ fname
+      fpath = opt.image+os.sep+ fname
       inputlist.append(fpath)
     
     if opt.rsort:
@@ -375,11 +375,11 @@ for inp in inputlist:
       im = pprocess(im.cpu(), opt) 
       im -= im.min()
       im /= im.max()
-      save_image((im), opt.dir+"/"+name+"-"+str(ctr)+"-finalp.png")    
+      save_image((im), opt.dir+os.sep+name+"-"+str(ctr)+"-finalp.png")    
   
   else:
-      save_image(im, opt.dir+"/"+name+"-"+str(ctr)+"-final.png")
+      save_image(im, opt.dir+os.sep+name+"-"+str(ctr)+"-final.png")
 
-  if opt.latest:
-      save_image(im, "/var/www/html/latest.jpg")
+  #if opt.latest:
+  #    save_image(im, "/var/www/html/latest.jpg")
         

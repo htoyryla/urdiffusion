@@ -367,7 +367,7 @@ if os.path.isdir(opt.image):
       if not ext in ['jpg', 'jpeg', 'png', 'tiff', 'tif']:
         continue
         
-      fpath = opt.image+"/"+ fname
+      fpath = opt.image+os.sep+ fname
       inputlist.append(fpath)
     
     if opt.rsort:
@@ -393,7 +393,7 @@ for inp in inputlist:
   # prepare for tiling
   
   imTf = im.clone()
-  #save_image((imTf.clone()+0.5, opt.dir+"/"+name+"-init.png")
+  #save_image((imTf.clone()+0.5, opt.dir+os.sep+name+"-init.png")
   
   tilelist = tileList()
   print(tilelist)
@@ -454,14 +454,14 @@ for inp in inputlist:
     #  im = pprocess(im.cpu(), opt) 
     #  im -= im.min()
     #  im /= im.max()
-    #  #  #save_image((im), opt.dir+"/"+name+"-"+str(ctr)+"-"+str(tn)"-finalp.png")    
+    #  #  #save_image((im), opt.dir+os.sep+name+"-"+str(ctr)+"-"+str(tn)"-finalp.png")    
   
     #else:
-    #save_image(im, opt.dir+"/"+name+"-"+str(ctr)+"-"+str(tn)"-final.png")
+    #save_image(im, opt.dir+os.sep+name+"-"+str(ctr)+"-"+str(tn)"-final.png")
     #pass
       
     imTf = putTile(imTf, tile, im.cpu().detach()) 
-    #save_image(imTf, opt.dir+"/"+name+"-"+str(ctr)+"finalp.png")      
+    #save_image(imTf, opt.dir+os.sep+name+"-"+str(ctr)+"finalp.png")      
 
     im_ = imTf.clone().cpu()
     if opt.postproc:
@@ -469,9 +469,9 @@ for inp in inputlist:
       im_ -= im_.min()
       im_ /= im_.max()
 
-    save_image(im_, opt.dir+"/"+name+"-"+str(ctr)+"finalp.png")  
+    save_image(im_, opt.dir+os.sep+name+"-"+str(ctr)+"finalp.png")  
 
-    if opt.latest:
-      save_image(im_, "/var/www/html/latest.jpg")
+    #if opt.latest:
+    #  save_image(im_, "/var/www/html/latest.jpg")
         
   ctr += 1
