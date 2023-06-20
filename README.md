@@ -22,6 +22,7 @@ When you start guiding such a model with init images and prompts, it is best to 
 * einops
 * diffusers
 * CLIP
+* kornia
 * opencv (imported but not currently used)
 
 ## how to get started
