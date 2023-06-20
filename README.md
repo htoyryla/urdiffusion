@@ -25,6 +25,9 @@ When you start guiding such a model with init images and prompts, it is best to 
 * kornia
 * opencv (imported but not currently used)
 
+See https://github.com/htoyryla/urdiffusion/discussions/2 for more detailed installation procedure.
+
+
 ## how to get started
 
 Get model-230.pt to start with from https://drive.google.com/drive/folders/1s4fBeZvr23ma-a6eZMQqgeICyxiku6y_?usp=sharing
