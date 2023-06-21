@@ -71,6 +71,12 @@ You can also enable postprocessing on the generated image using --postproc, whic
 ```
 python urdifs.py --dir test/ --name portr --eta 0.5 --steps 100  --modelSize 512 --w 768  --h 768 --text "an abstract portrait" --textw 50 --lr 10  --load test/model-230.pt --image /home/hannu/Pictures/hft269e-adjusted.png --skip 10 --ema --postproc  --eqhist 0.5 --noise 0. --contrast 1 --gamma 0.8  --unsharp 2  --saturation 1
 ```
+
+## more use cases
+
+How to use the weak, skip and textw params to finetune the style https://github.com/htoyryla/urdiffusion/discussions/3
+
+
 ## training
 
 To train a model you need a dataset of images. I typically use sets from a hundred to 10 000 images, starting training from a pretrained one and training from a few hours to a day or two on a single 3090. Training works best when the images are visually reasonably similar, i.e. we are training with visual features rather than content. 
