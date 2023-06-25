@@ -27,16 +27,21 @@ When you start guiding such a model with init images and prompts, it is best to 
 
 See https://github.com/htoyryla/urdiffusion/discussions/2 for more detailed installation procedure.
 
+## models
+
+Get model-230.pt to start with from https://drive.google.com/drive/folders/1s4fBeZvr23ma-a6eZMQqgeICyxiku6y_?usp=sharing
+and place it into folder models/
+
+Generally, I don't share my models. You should train your own with your own materials. It should be quite easy, starting from my example model as a basis.
+
+NOTE: The permissions of the above Google Drive link were wrong but have now been corrected, so you should be able to access the model.
 
 ## how to get started
 
-Get model-230.pt to start with from https://drive.google.com/drive/folders/1s4fBeZvr23ma-a6eZMQqgeICyxiku6y_?usp=sharing
-and place it into folder test/
-
-Then generate an image as follows. Use your own image path however :D
+Generate an image as follows. Use your own image path however :D
 
 ```
-python urdifs.py --dir test/ --name portr2 --eta 0.5 --steps 100  --modelSize 512 --w 768  --h 768 --model unet2 --mults 1 1 2 2 4 4 8 8 --text "an abstract portrait" --textw 50 --lr 10  --load test/model-230.pt --image /home/hannu/Pictures/hft269e-adjusted.png --skip 10  --ema
+python urdifs.py --dir test/ --name portr2 --eta 0.5 --steps 100  --modelSize 512 --w 768  --h 768 --model unet2 --mults 1 1 2 2 4 4 8 8 --text "an abstract portrait" --textw 50 --lr 10  --load models/model-230.pt --image /home/hannu/Pictures/hft269e-adjusted.png --skip 10  --ema
 ```
 
 In practice, you can ignore (leave out) settings like model and mults, unless you have experimented in training models with different settings. Unet2 and  1 1 2 2 4 4 8 8 have been found to work well in general work. Modelsize is the size the model was trained with, this too should be left to 512 (and can be omitted). 
