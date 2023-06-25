@@ -120,6 +120,29 @@ If we think of urdiffusion models as something like styles, it also makes sense 
 python interpolate_models.py --m1 squares/model-490.pt --m2 fadedmem/model-550.pt --out squares-fadedmem-08.pt --beta 0.8
 ```
 
+## web app urdifapp
+
+Install gradio
+
+```
+pip install gradio
+```
+
+Start the server from command line
+
+```
+python urdifapp.py
+```
+
+
+Use your browser to go to localhost:7860 or <ip-of-your-computer>:7860 if accessing from another computer in your LAN (as I do, I have bix linux boxes in a small room and work from a more convenient place from Mac)
+
+The client is still in alpha phase, it works for a single user but it is not robust. It is better to wait until generation is finished before doing changes. On the other hand, if something goes wrong, use two or three control-C's to stop the server and restart it.
+
+
+
+
+
 
 
 
