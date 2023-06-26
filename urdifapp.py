@@ -284,8 +284,6 @@ progress = 0
 def diffusion_run(im, progress):
     global opt, img_encp, txt_enc, imS, imout, imout_raw, timesteps 
         
-    print(opt.text, opt.textw)
-        
     init_noise = torch.zeros(1,3,opt.h,opt.w).normal_(0,1).cuda()
 
     #if opt.tgt_image != "":   
@@ -314,14 +312,12 @@ def diffusion_run(im, progress):
         
     def getx(im=None):
         global timesteps, opt
-        print(timesteps)
         init_noise = torch.zeros(bs,3,opt.h,opt.w).normal_(0,1).cuda()
         if im is not None:   
             im = Image.fromarray(im)
             x = transform(im).cuda().unsqueeze(0)
             x -= 0.5 #(imT_ * 2) - 1
             x = opt.mul*scheduler.add_noise(x, init_noise, timesteps[opt.weak])
-            print(x.std())
         else:
             x = opt.mul*init_noise * scheduler.init_noise_sigma
 
@@ -518,38 +514,30 @@ with gr.Blocks() as demo:
         opt.bils1 = int(bils1)    
         opt.bils2 = int(bils2)    
         
-        print(opt.bil)
-        
         post_process_status.value = "Postprocessing..."
         imT = TF.to_tensor(imout_raw).unsqueeze(0)*2 - 1
-        print(imT.min(), imT.max())
         imT = pprocess(imT, opt)
         imT = imT - imT.min()
         imT = imT / imT.max()
-        print(imT.min(), imT.max())
         imout = TF.to_pil_image(imT[0])
         post_process_status.value = "Done"
         return "Done"
     
     def run(t, s, m, im, skip, weak):
-        print(t, s, m)
         opt.textw = float(s)
         opt.mul = float(m)
         opt.text = t
         opt.skip = int(skip)
         opt.weak = int(weak*(opt.steps - opt.skip - 1))
-        print(opt.weak)
-        
-        print(opt.textw)
         
         process_status.value = "Processing..."
         imo = diffusion_run(im, progress=gr.Progress())
         process_status.value = "Done"
         return "Done"    
              
-    text_button.click(queue=False, fn=run, inputs=[text_input, textw, mul, init_image, skip, weak], outputs=process_status)
+    text_button.click(queue=True, fn=run, inputs=[text_input, textw, mul, init_image, skip, weak], outputs=process_status)
     
-    proc_button.click(queue=False, fn=pproc, inputs=[contrast, gamma, saturation, eqhist, unsharp, noise, bil, bils1, bils2], outputs=post_process_status)
+    proc_button.click(queue=True, fn=pproc, inputs=[contrast, gamma, saturation, eqhist, unsharp, noise, bil, bils1, bils2], outputs=post_process_status)
 
 demo.queue(concurrency_count=1)
-demo.launch(server_name = "0.0.0.0")
+demo.launch(share=True, server_name = "0.0.0.0")
