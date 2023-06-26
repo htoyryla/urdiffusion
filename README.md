@@ -23,7 +23,8 @@ When you start guiding such a model with init images and prompts, it is best to 
 * diffusers
 * CLIP
 * kornia
-* opencv (imported but not currently used)
+* opencv (needed by postprocessing)
+  
 
 See https://github.com/htoyryla/urdiffusion/discussions/2 for more detailed installation procedure.
 
