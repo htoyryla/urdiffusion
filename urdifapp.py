@@ -518,6 +518,8 @@ with gr.Blocks() as demo:
         opt.bils1 = int(bils1)    
         opt.bils2 = int(bils2)    
         
+        print(opt.bil)
+        
         post_process_status.value = "Postprocessing..."
         imT = TF.to_tensor(imout_raw).unsqueeze(0)*2 - 1
         print(imT.min(), imT.max())
@@ -550,4 +552,4 @@ with gr.Blocks() as demo:
     proc_button.click(queue=False, fn=pproc, inputs=[contrast, gamma, saturation, eqhist, unsharp, noise, bil, bils1, bils2], outputs=post_process_status)
 
 demo.queue(concurrency_count=1)
-demo.launch(share=True, server_name = "0.0.0.0")
+demo.launch(server_name = "0.0.0.0")
