@@ -135,7 +135,7 @@ python urdifapp.py
 ```
 
 
-Use your browser to go to localhost:7860 or <ip-of-your-computer>:7860 if accessing from another computer in your LAN (as I do, I have bix linux boxes in a small room and work from a more convenient place from Mac)
+Use your browser to go to localhost:7860 or ip-of-your-computer:7860 if accessing from another computer in your LAN (as I do, I have bix linux boxes in a small room and work from a more convenient place from Mac)
 
 The client is still in alpha phase, it works for a single user but it is not robust. It is better to wait until generation is finished before doing changes. On the other hand, if something goes wrong, use two or three control-C's to stop the server and restart it.
 
