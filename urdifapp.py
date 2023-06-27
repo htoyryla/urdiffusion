@@ -540,4 +540,4 @@ with gr.Blocks() as demo:
     proc_button.click(queue=True, fn=pproc, inputs=[contrast, gamma, saturation, eqhist, unsharp, noise, bil, bils1, bils2], outputs=post_process_status)
 
 demo.queue(concurrency_count=1)
-demo.launch(share=True, server_name = "0.0.0.0")
+demo.launch(server_name = "0.0.0.0")
