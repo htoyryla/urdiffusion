@@ -452,8 +452,8 @@ with gr.Blocks() as demo:
             process_status = gr.Textbox(label="Generation status")
         
     with gr.Row():    
-        image_output_raw = gr.Image(shape=(640,640), label="generated")
-        image_output = gr.Image(shape=(640,640), label="postprocessed")
+        image_output_raw = gr.Image(label="generated")
+        image_output = gr.Image(label="postprocessed")
     
     with gr.Row():    
         with gr.Column():
