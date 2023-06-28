@@ -431,7 +431,7 @@ with gr.Blocks() as demo:
             skip = gr.Slider(minimum=0, maximum=100, value=10, label="Skip")
             mul = gr.Slider(minimum=0., maximum=1., value=1., label="Noise level")
             weak = gr.Slider(minimum=0., maximum=1., value=0., label="Softness")
-        init_image = gr.Image(shape=(512, 512))
+        init_image = gr.Image()
         with gr.Column():
             modelsel = gr.Dropdown(choices = opt.modellist, value=opt.load, label="Select model")        
             text_button = gr.Button("Go")
