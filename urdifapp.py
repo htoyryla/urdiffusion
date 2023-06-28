@@ -274,8 +274,8 @@ def get_timesteps(skip = opt.skip):
 
     return {'timesteps':timesteps, 't_start': t_start}
        
-imout = tensor_to_pil(torch.zeros(3,opt.h,opt.w).normal_(0,1)) #.cuda()
-imout_raw = tensor_to_pil(torch.zeros(3,opt.h,opt.w).normal_(0,1)) #.cuda()
+#imout = tensor_to_pil(torch.zeros(3,opt.h,opt.w).normal_(0,1)) #.cuda()
+#imout_raw = tensor_to_pil(torch.zeros(3,opt.h,opt.w).normal_(0,1)) #.cuda()
 
 timesteps = None
 
@@ -408,29 +408,15 @@ def diffusion_run(im, progress):
             
             imout = tensor_to_pil(im[0])
             
+            ctr += 1
+            
             progress(float(i) / (opt.steps - opt.skip))
-
-    im = (x.clone()+0.5)
-  
-    if opt.onorm:
-            im -= im.min()
-            im /= im.max()
-    else:    
-          im = im.clamp(0,1)
-          
-    imout_raw = tensor_to_pil(im[0])      
-           
-    im = pprocess(im*2 - 1, opt)
-    im -= im.min()
-    im /= im.max()
-          
-    # show image    
-    imout = tensor_to_pil(im[0])   
-    im = tensor_to_pil(im[0])
         
-    return im
+            yield imout, imout_raw, str(ctr)+"/"+str(opt.steps - opt.skip)
       
 with gr.Blocks() as demo:
+    
+    imo = gr.State(Image.new('RGB', (768, 768)))
     
     with gr.Row():
         with gr.Column(min_width = 80):
@@ -452,8 +438,8 @@ with gr.Blocks() as demo:
             process_status = gr.Textbox(label="Generation status")
         
     with gr.Row():    
-        image_output_raw = gr.Image(label="generated")
-        image_output = gr.Image(label="postprocessed")
+        image_output_raw = gr.Image(inputs=None, label="generated")
+        image_output = gr.Image(inputs=None, label="postprocessed")
     
     with gr.Row():    
         with gr.Column():
@@ -472,11 +458,13 @@ with gr.Blocks() as demo:
             proc_button = gr.Button("Change")
             post_process_status = gr.Textbox(label="Postprocess status")
     
+    '''''
     def refresh():
         im = imout
         im_r = imout_raw
         return im, im_r
-    
+    '''
+            
     def changemodel(m):    
         print(m)
         m = "./models/"+m
@@ -493,14 +481,13 @@ with gr.Blocks() as demo:
     
     modelsel.change(fn=changemodel, inputs=modelsel)
     
-    demo.load(fn=refresh, inputs=None, outputs=[image_output, image_output_raw],
-                        show_progress=True, every=1)
+    #demo.load(fn=refresh, inputs=None, outputs=[image_output, image_output_raw],
+    #                    show_progress=True, every=1)
     
     md = gr.Markdown('------------')
  
    
     def pproc(contrast, gamma, saturation, eqhist, unsharp, noise, bil, bils1, bils2):
-        global imout
         opt.contrast = float(contrast)
         opt.gamma = float(gamma)
         opt.saturation = float(saturation)
@@ -515,15 +502,16 @@ with gr.Blocks() as demo:
         opt.bils2 = int(bils2)    
         
         post_process_status.value = "Postprocessing..."
-        imT = TF.to_tensor(imout_raw).unsqueeze(0)*2 - 1
+        imT = TF.to_tensor(imo).unsqueeze(0)*2 - 1
         imT = pprocess(imT, opt)
         imT = imT - imT.min()
         imT = imT / imT.max()
         imout = TF.to_pil_image(imT[0])
         post_process_status.value = "Done"
-        return "Done"
+        return imout, "Done"
     
     def run(t, s, m, im, skip, weak):
+        global imo
         opt.textw = float(s)
         opt.mul = float(m)
         opt.text = t
@@ -531,13 +519,13 @@ with gr.Blocks() as demo:
         opt.weak = int(weak*(opt.steps - opt.skip - 1))
         
         process_status.value = "Processing..."
-        imo = diffusion_run(im, progress=gr.Progress())
-        process_status.value = "Done"
-        return "Done"    
+        for im, imr, i in diffusion_run(im, progress=gr.Progress()):
+            imo = im
+            yield im, imr, str(i)     
              
-    text_button.click(queue=True, fn=run, inputs=[text_input, textw, mul, init_image, skip, weak], outputs=process_status)
+    text_button.click(queue=True, fn=run, inputs=[text_input, textw, mul, init_image, skip, weak], outputs=[image_output, image_output_raw, process_status])
     
-    proc_button.click(queue=True, fn=pproc, inputs=[contrast, gamma, saturation, eqhist, unsharp, noise, bil, bils1, bils2], outputs=post_process_status)
+    proc_button.click(queue=True, fn=pproc, inputs=[contrast, gamma, saturation, eqhist, unsharp, noise, bil, bils1, bils2], outputs=[image_output, post_process_status])
 
 demo.queue(concurrency_count=1)
 demo.launch(server_name = "0.0.0.0")
