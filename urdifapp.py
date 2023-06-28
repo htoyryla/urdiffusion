@@ -520,7 +520,7 @@ with gr.Blocks() as demo:
         
         process_status.value = "Processing..."
         for im, imr, i in diffusion_run(im, progress=gr.Progress()):
-            imo = im
+            imo = imr
             yield im, imr, str(i)     
              
     text_button.click(queue=True, fn=run, inputs=[text_input, textw, mul, init_image, skip, weak], outputs=[image_output, image_output_raw, process_status])
