@@ -1,6 +1,3 @@
-#from mdiffusion2c import DDIMDiffusion
-#from mdiffusion2c import noise_like
-
 from diffusers import DDIMScheduler
 
 import torch
@@ -14,23 +11,17 @@ import os
 import clip
 import argparse
 import cv2
-#from pytorch_msssim import ssim
+
 from postproc import pprocess
-
 from functools import partial
-
 import numpy as np
-
 import random
 
 from alt_models.Unet2 import Unet 
 
 import types
-
 import gradio as gr
-
 from cutouts import cut
-
 import math
 
 
@@ -106,6 +97,8 @@ model = Unet(
     dim_mults = opt.mults # (1, 2, 4, 8)
 ).cuda()
 
+# set up clip model for textual guidance
+
 
 perceptor, clip_preprocess = clip.load('ViT-B/32', jit=False)
 perceptor = perceptor.eval()
@@ -126,7 +119,7 @@ else:
     opt.load = ml[0]
     fn = "./models/"+opt.load
         
-  
+# function to load model weights  
   
 def load_model(fn):
   data = torch.load(fn)
@@ -147,6 +140,8 @@ def load_model(fn):
        del dd[k]
 
   return dd
+  
+# load default model  
   
 dd = load_model(fn)
     
@@ -185,7 +180,8 @@ def make_betas(timesteps):
     betas = torch.clip(betas, 0, 0.999)
     
     return betas.numpy()
-    
+
+# create scheduler    
 
 scheduler = DDIMScheduler(num_train_timesteps=opt.trainsteps, prediction_type = "epsilon", trained_betas = make_betas(opt.trainsteps), clip_sample=False)
 scheduler.set_timesteps(opt.steps, device="cuda")
@@ -193,6 +189,8 @@ scheduler.set_timesteps(opt.steps, device="cuda")
 scheduler.alphas_cumprod = scheduler.alphas_cumprod.to("cuda")
 
 timesteps = None
+
+# function to set timesteps
 
 def get_timesteps(skip = opt.skip):
     offset = scheduler.config.get("steps_offset", 0)
@@ -207,21 +205,23 @@ def get_timesteps(skip = opt.skip):
     return {'timesteps':timesteps, 't_start': t_start}
        
 
-progress = 0  # ???????????
 
+# diffusion run to be run by each user instance
 
-def diffusion_run(im, opt, progress):
+def diffusion_run(modelsel, im, o, progress):
+
+    # only global objects are the currently active model and its name    
+    
     global current_modelname, model 
     
-    # start noise for diffusion
-    
-    #init_noise = torch.zeros(1,3,opt.h,opt.w).normal_(0,1).cuda()
-    
+
     # load model weights unless same model is already loaded
     
-    print(current_modelname, opt.modelname)        
+    o.modelname = modelsel
     
-    if opt.modelname != current_modelname:
+    print(current_modelname, o.modelname)        
+    
+    if o.modelname != current_modelname:
         fn = "models"+os.sep + opt.modelname
         print("loading "+fn)
         dd = load_model(fn)
@@ -252,9 +252,9 @@ def diffusion_run(im, opt, progress):
 
         nimg = None
 
-        if opt.text != "" and opt.textw > 0:
+        if o.text != "" and o.textw > 0:
             nimg = x_s.clip(-1, 1) + 0.5    
-            nimg = cut(nimg, cutn=opt.cutn, low=opt.low, high=opt.high, norm = cnorm)
+            nimg = cut(nimg, cutn=o.cutn, low=opt.low, high=o.high, norm = cnorm)
         
             # get image encoding from CLIP
  
@@ -263,12 +263,12 @@ def diffusion_run(im, opt, progress):
             # we already have text embedding for the promt in txt_enc
             # so we can evaluate similarity
      
-            if opt.spher:
-                loss = opt.textw * spherical_dist_loss(txt_enc.detach(), img_enc).mean()
-            loss = opt.textw*10*(1-torch.cosine_similarity(txt_enc.detach(), img_enc)).view(-1, bs).T.mean(1)
+            if o.spher:
+                loss = o.textw * spherical_dist_loss(txt_enc.detach(), img_enc).mean()
+            loss = o.textw*10*(1-torch.cosine_similarity(txt_enc.detach(), img_enc)).view(-1, bs).T.mean(1)
             losses.append(("Text loss",loss.item())) 
-            if opt.tdecay < 1.:
-                opt.textw = opt.tdecay * opt.textw
+            if o.tdecay < 1.:
+                o.textw = o.tdecay * o.textw
             x_grad += torch.autograd.grad(loss.sum(), x_s, retain_graph = True)[0]
 
             del nimg
@@ -302,13 +302,13 @@ def diffusion_run(im, opt, progress):
           
         del x, x_s, x_grad, loss
           
-        return opt.lr * grad.detach()
+        return o.lr * grad.detach()
         
         
     # get text encoding for the prompt    
 
-    if opt.text != "" and opt.textw > 0:
-        tx = clip.tokenize(opt.text)                        # convert text to a list of tokens 
+    if o.text != "" and o.textw > 0:
+        tx = clip.tokenize(o.text)                        # convert text to a list of tokens 
         txt_enc = perceptor.encode_text(tx.cuda()).detach()   # get sentence embedding for the tokens
         del tx
     else:
@@ -333,37 +333,54 @@ def diffusion_run(im, opt, progress):
 
     #x = init_noise.cuda()
     
-    timesteps = get_timesteps(opt.skip)['timesteps'] 
+
+    
+    # function to initialize diffusion with noise & init image (when applicable)
         
     def getx(im=None):
         init_noise = torch.zeros(bs,3,opt.h,opt.w).normal_(0,1).cuda()
+        
+        # if init image, mix it with noise
+        
         if im is not None:   
             im = Image.fromarray(im)
             x = transform(im).cuda().unsqueeze(0)
             x -= 0.5 #(imT_ * 2) - 1
-            x = opt.mul*scheduler.add_noise(x, init_noise, timesteps[opt.weak])
+            x = o.mul*scheduler.add_noise(x, init_noise, timesteps[o.weak])
+        
+        # otherwise pure noise adjusted to proper level
+        
         else:
-            x = opt.mul*init_noise * scheduler.init_noise_sigma
+            x = o.mul*init_noise * scheduler.init_noise_sigma
 
         return x   
 
-    progress(0)
+    # main diffusion loop starts here
     
+    timesteps = get_timesteps(o.skip)['timesteps'] 
+
+    progress(0)
+
     ctr = 0
+    
+    # get initial noise (mixed with init image if present)
+    
     x = getx(im).cuda()      
+    
+    # iterate through timesteps
+    
     for i in tqdm(timesteps):
+    
         with torch.no_grad():
             t = torch.tensor([i] * bs, device='cuda').detach()
             
-            if (opt.text!="" and opt.textw > 0):
+            if (o.text!="" and o.textw > 0):
                with torch.enable_grad():
                    with torch.autocast(device_type='cuda', dtype=torch.float16):
                        x.requires_grad_() 
                        t = t.to(device=x.device)
                        noise = model(x, t).to(device=x.device, dtype=x.dtype)
                        
-                       #print(x.device, noise.device, t.device)
-                                        
                        alpha_prod_t = scheduler.alphas_cumprod[t.cpu()].to(device=x.device, dtype=x.dtype)
                        beta_prod_t = 1 - alpha_prod_t
                        
@@ -373,9 +390,6 @@ def diffusion_run(im, opt, progress):
                  
                        grad = cond_fn(x, t, sample).to(device=x.device, dtype=x.dtype)
                        noise = noise - torch.sqrt(beta_prod_t) * grad
-                       
-                       #print(x.device, noise.device, t.device)  
-                       #print(grad.std())  
                                     
                        s = scheduler.step(noise, t, x, eta=opt.eta) #
                        x = s['prev_sample'].cuda().detach() 
@@ -391,9 +405,11 @@ def diffusion_run(im, opt, progress):
       
             del noise
             
+            # adjust output into raw (unprocessed) image and a post processed one
+            
             im = (x_s.clone()+0.5)
   
-            if opt.onorm:
+            if o.onorm:
                 im -= im.min()
                 im /= im.max()
             else:    
@@ -409,9 +425,11 @@ def diffusion_run(im, opt, progress):
             
             ctr += 1
             
-            progress(float(i) / (opt.steps - opt.skip))
+            progress(float(i) / (o.steps - o.skip))
         
-            yield imout, imout_raw, str(ctr)+"/"+str(opt.steps - opt.skip)
+            yield imout, imout_raw, str(ctr)+"/"+str(o.steps - o.skip)
+            
+# gradio UI           
       
 with gr.Blocks() as demo:
     
@@ -419,7 +437,6 @@ with gr.Blocks() as demo:
     opt_ = gr.State(types.SimpleNamespace())
     opt_ = opt
     opt_.modelname = current_modelname
-    #modelname = gr.State(current_modelname)
     
     with gr.Row():
         with gr.Column(min_width = 80):
@@ -461,25 +478,10 @@ with gr.Blocks() as demo:
             proc_button = gr.Button("Change")
             post_process_status = gr.Textbox(label="Postprocess status")
     
-            
-    def changemodel(m):    
-        global opt_
-        
-        opt_.modelname = m
-        print(opt_)
-        
-        return
-    
-    modelsel.change(fn=changemodel, inputs=modelsel)
-    
-    #demo.load(fn=refresh, inputs=None, outputs=[image_output, image_output_raw],
-    #                    show_progress=True, every=1)
-    
-    md = gr.Markdown('------------')
- 
+    # function to apply changed post processing settings to current image
    
     def pproc(contrast, gamma, saturation, eqhist, unsharp, noise, bil, bils1, bils2):
-        global opt_
+        global opt_, imo
         opt_.contrast = float(contrast)
         opt_.gamma = float(gamma)
         opt_.saturation = float(saturation)
@@ -501,9 +503,13 @@ with gr.Blocks() as demo:
         imout = TF.to_pil_image(imT[0])
         post_process_status.value = "Done"
         return imout, "Done"
+        
+    # function to run diffusion based on current settings    
     
-    def run(t, s, m, im, skip, weak):
-        global imo, opt_
+    def run(ms, t, s, m, im, skip, weak):
+        global opt_, imo
+        
+        print("starting run: ",opt_)
         
         opt_.textw = float(s)
         opt_.mul = float(m)
@@ -512,13 +518,15 @@ with gr.Blocks() as demo:
         opt_.weak = int(weak*(opt_.steps - opt_.skip - 1))
         
         process_status.value = "Processing..."
-        for im, imr, i in diffusion_run(im, opt_, progress=gr.Progress()):
+        for im, imr, i in diffusion_run(ms, im, opt_, progress=gr.Progress()):
             imo = imr
             yield im, imr, str(i)     
+            
+    # buttons to trigger diffusion and post processing        
              
-    text_button.click(queue=True, fn=run, inputs=[text_input, textw, mul, init_image, skip, weak], outputs=[image_output, image_output_raw, process_status])
+    text_button.click(queue=True, fn=run, inputs=[modelsel, text_input, textw, mul, init_image, skip, weak], outputs=[image_output, image_output_raw, process_status])
     
     proc_button.click(queue=True, fn=pproc, inputs=[contrast, gamma, saturation, eqhist, unsharp, noise, bil, bils1, bils2], outputs=[image_output, post_process_status])
 
-demo.queue(concurrency_count=1)
+demo.queue(concurrency_count=1, status_update_rate=5)
 demo.launch(server_name = "0.0.0.0")
