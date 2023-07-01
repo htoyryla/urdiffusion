@@ -172,76 +172,6 @@ transform = transforms.Compose([transforms.Resize((opt.h, opt.w)), transforms.To
 
 tensor_to_pil = transforms.ToPILImage()
 
-
-
-# cond function for guidance by text prompt and images
-
-@torch.enable_grad()
-def cond_fn(x, t, x_s, opt, txt_enc):
-    x_is_NaN = False
-    x.grad = None
-    x.requires_grad_()
-    n = x.shape[0]         
-    
-    x_s.requires_grad_()
-    x_grad = torch.zeros_like(x_s)
-                    
-    loss = 0
-    losses = []
-
-    nimg = None
-
-    if opt.text != "" and opt.textw > 0:
-        nimg = x_s.clip(-1, 1) + 0.5    
-        nimg = cut(nimg, cutn=opt.cutn, low=opt.low, high=opt.high, norm = cnorm)
-        
-        # get image encoding from CLIP
- 
-        img_enc = perceptor.encode_image(nimg) 
-  
-        # we already have text embedding for the promt in txt_enc
-        # so we can evaluate similarity
-     
-        if opt.spher:
-            loss = opt.textw * spherical_dist_loss(txt_enc.detach(), img_enc).mean()
-        loss = opt.textw*10*(1-torch.cosine_similarity(txt_enc.detach(), img_enc)).view(-1, bs).T.mean(1)
-        losses.append(("Text loss",loss.item())) 
-        if opt.tdecay < 1.:
-            opt.textw = opt.tdecay * opt.textw
-        x_grad += torch.autograd.grad(loss.sum(), x_s, retain_graph = True)[0]
-
-        del nimg
-
-    '''''
-    if opt.img_prompt != "":
-        if nimg == None:
-            nimg = x_s.clip(-1, 1) + 0.5     
-            nimg = cut(nimg, cutn=12, low=0.6, high=0.97, norm = cnorm)
-            img_enc = perceptor.encode_image(nimg)
-            del nimg
-        loss1 = opt.imgpw*10*(1-torch.cosine_similarity(imgp_enc, img_enc)).view(-1, bs).T.mean(1)  
-        losses.append(("Img prompt loss",loss1.item())) 
-        loss = loss + loss1     
-        
-        x_grad += torch.autograd.grad(loss1.sum(), x_s, retain_graph = True)[0]
-        
-    if opt.tgt_image != "":
-          loss_ = opt.ssimw * (1 - ssim((x_s+1)/2, (imS+1)/2)).mean() 
-          losses.append(("Ssim loss",loss_.item())) 
-          loss = loss + loss_    
-          
-          x_grad += torch.autograd.grad(loss_.sum(), x_s, retain_graph = True)[0]
-    ''' 
-        
-    if torch.isnan(x_grad).any()==False:
-        grad = -torch.autograd.grad(x_s, x, x_grad)[0]
-    else:
-      x_is_NaN = True
-      grad = torch.zeros_like(x)             
-          
-    del x, x_s, x_grad, loss
-          
-    return opt.lr * grad.detach()
     
 # important! will not work with diffusers default betas 
 
@@ -276,22 +206,20 @@ def get_timesteps(skip = opt.skip):
 
     return {'timesteps':timesteps, 't_start': t_start}
        
-#imout = tensor_to_pil(torch.zeros(3,opt.h,opt.w).normal_(0,1)) #.cuda()
-#imout_raw = tensor_to_pil(torch.zeros(3,opt.h,opt.w).normal_(0,1)) #.cuda()
 
-timesteps = None
+progress = 0  # ???????????
 
-progress = 0
-
-#current_model = opt.modelname
 
 def diffusion_run(im, opt, progress):
-    global timesteps, current_modelname, model 
-        
-        
-    print(current_modelname, opt.modelname)    
+    global current_modelname, model 
     
-    init_noise = torch.zeros(1,3,opt.h,opt.w).normal_(0,1).cuda()
+    # start noise for diffusion
+    
+    #init_noise = torch.zeros(1,3,opt.h,opt.w).normal_(0,1).cuda()
+    
+    # load model weights unless same model is already loaded
+    
+    print(current_modelname, opt.modelname)        
     
     if opt.modelname != current_modelname:
         fn = "models"+os.sep + opt.modelname
@@ -306,7 +234,86 @@ def diffusion_run(im, opt, progress):
 
         model.load_state_dict(dd_, strict=False)
         current_modelname = fn.split(os.sep)[-1]
+    
+    # cond function for guidance by text prompt and images
+
+    @torch.enable_grad()
+    def cond_fn(x, t, x_s):
+        x_is_NaN = False
+        x.grad = None
+        x.requires_grad_()
+        n = x.shape[0]         
+    
+        x_s.requires_grad_()
+        x_grad = torch.zeros_like(x_s)
+                    
+        loss = 0
+        losses = []
+
+        nimg = None
+
+        if opt.text != "" and opt.textw > 0:
+            nimg = x_s.clip(-1, 1) + 0.5    
+            nimg = cut(nimg, cutn=opt.cutn, low=opt.low, high=opt.high, norm = cnorm)
         
+            # get image encoding from CLIP
+ 
+            img_enc = perceptor.encode_image(nimg) 
+  
+            # we already have text embedding for the promt in txt_enc
+            # so we can evaluate similarity
+     
+            if opt.spher:
+                loss = opt.textw * spherical_dist_loss(txt_enc.detach(), img_enc).mean()
+            loss = opt.textw*10*(1-torch.cosine_similarity(txt_enc.detach(), img_enc)).view(-1, bs).T.mean(1)
+            losses.append(("Text loss",loss.item())) 
+            if opt.tdecay < 1.:
+                opt.textw = opt.tdecay * opt.textw
+            x_grad += torch.autograd.grad(loss.sum(), x_s, retain_graph = True)[0]
+
+            del nimg
+
+        '''''
+        if opt.img_prompt != "":
+            if nimg == None:
+                nimg = x_s.clip(-1, 1) + 0.5     
+                nimg = cut(nimg, cutn=12, low=0.6, high=0.97, norm = cnorm)
+                img_enc = perceptor.encode_image(nimg)
+                del nimg
+            loss1 = opt.imgpw*10*(1-torch.cosine_similarity(imgp_enc, img_enc)).view(-1, bs).T.mean(1)  
+            losses.append(("Img prompt loss",loss1.item())) 
+            loss = loss + loss1     
+        
+            x_grad += torch.autograd.grad(loss1.sum(), x_s, retain_graph = True)[0]
+        
+        if opt.tgt_image != "":
+              loss_ = opt.ssimw * (1 - ssim((x_s+1)/2, (imS+1)/2)).mean() 
+              losses.append(("Ssim loss",loss_.item())) 
+              loss = loss + loss_    
+          
+              x_grad += torch.autograd.grad(loss_.sum(), x_s, retain_graph = True)[0]
+        ''' 
+        
+        if torch.isnan(x_grad).any()==False:
+            grad = -torch.autograd.grad(x_s, x, x_grad)[0]
+        else:
+          x_is_NaN = True
+          grad = torch.zeros_like(x)             
+          
+        del x, x_s, x_grad, loss
+          
+        return opt.lr * grad.detach()
+        
+        
+    # get text encoding for the prompt    
+
+    if opt.text != "" and opt.textw > 0:
+        tx = clip.tokenize(opt.text)                        # convert text to a list of tokens 
+        txt_enc = perceptor.encode_text(tx.cuda()).detach()   # get sentence embedding for the tokens
+        del tx
+    else:
+        txt_enc = None    
+    
 
     #if opt.tgt_image != "":   
     #  if opt.tgt_image == "init":
@@ -321,21 +328,14 @@ def diffusion_run(im, opt, progress):
     #    nimg = cut(nimg, cutn=12, low=0.6, high=0.97, norm = cnorm)
     #    imgp_enc = perceptor.encode_image(nimg.detach()).detach()
 
-    if opt.text != "" and opt.textw > 0:
-        tx = clip.tokenize(opt.text)                        # convert text to a list of tokens 
-        txt_enc = perceptor.encode_text(tx.cuda()).detach()   # get sentence embedding for the tokens
-        del tx
-    else:
-        txt_enc = None    
         
-    indices = list(range(opt.steps - opt.skip))[::-1] 
+    #indices = list(range(opt.steps - opt.skip))[::-1] 
 
-    x = init_noise.cuda()
+    #x = init_noise.cuda()
     
     timesteps = get_timesteps(opt.skip)['timesteps'] 
         
     def getx(im=None):
-        global timesteps, opt
         init_noise = torch.zeros(bs,3,opt.h,opt.w).normal_(0,1).cuda()
         if im is not None:   
             im = Image.fromarray(im)
@@ -345,32 +345,7 @@ def diffusion_run(im, opt, progress):
         else:
             x = opt.mul*init_noise * scheduler.init_noise_sigma
 
-        return x    
-        
-
-    if os.path.isdir(opt.image):
-        imgList = os.listdir(opt.image)
-        inputlist = []
-        for fname in imgList:
-          # skip non-images
-          ext = fname.split('.')[-1].lower()
-          imgname = fname.split('.')[0].lower()
-          if not ext in ['jpg', 'jpeg', 'png', 'tiff', 'tif']:
-            continue
-        
-          fpath = opt.image+"/"+ fname
-          inputlist.append(fpath)
-          #inputlist.sort() # todo proper numeric sort
-          random.shuffle(inputlist)
-
-    elif opt.image == "":
-        inputlist = [None]
-
-    else:     
-        inputlist = [opt.image]
-
-    #timesteps = get_timesteps(opt.skip)['timesteps']    
-
+        return x   
 
     progress(0)
     
@@ -396,7 +371,7 @@ def diffusion_run(im, opt, progress):
                        fac = torch.sqrt(beta_prod_t) #.cuda()
                        sample = pred_original_sample * (fac) + x * (1 - fac)
                  
-                       grad = cond_fn(x, t, sample, opt, txt_enc).to(device=x.device, dtype=x.dtype)
+                       grad = cond_fn(x, t, sample).to(device=x.device, dtype=x.dtype)
                        noise = noise - torch.sqrt(beta_prod_t) * grad
                        
                        #print(x.device, noise.device, t.device)  
