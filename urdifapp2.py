@@ -369,7 +369,8 @@ def diffusion_run(modelsel, im, o, progress):
     
     # iterate through timesteps
     
-    for i in tqdm(timesteps):
+    #for i in tqdm(timesteps):
+    for i in timesteps:
     
         with torch.no_grad():
             t = torch.tensor([i] * bs, device='cuda').detach()
@@ -509,7 +510,7 @@ with gr.Blocks() as demo:
     def run(ms, t, s, m, im, skip, weak):
         global opt_, imo
         
-        print("starting run: ",opt_)
+        #print("starting run: ",opt_)
         
         opt_.textw = float(s)
         opt_.mul = float(m)
@@ -519,6 +520,7 @@ with gr.Blocks() as demo:
         
         process_status.value = "Processing..."
         for im, imr, i in diffusion_run(ms, im, opt_, progress=gr.Progress()):
+            #print(i)
             imo = imr
             yield im, imr, str(i)     
             
@@ -528,5 +530,5 @@ with gr.Blocks() as demo:
     
     proc_button.click(queue=True, fn=pproc, inputs=[contrast, gamma, saturation, eqhist, unsharp, noise, bil, bils1, bils2], outputs=[image_output, post_process_status])
 
-demo.queue(concurrency_count=1, status_update_rate=5)
+demo.queue(concurrency_count=1)
 demo.launch(server_name = "0.0.0.0")
