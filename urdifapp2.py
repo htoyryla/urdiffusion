@@ -54,7 +54,7 @@ opt.w = 0
 opt.mults = [1, 1, 2, 2, 4, 4, 8, 8]
 opt.spher = False
 
-opt.steps = 100
+opt.steps = 50
 opt.eta = 0.5
 
 opt.cutn = 32
@@ -109,8 +109,9 @@ cnorm = transforms.Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0
 dc = os.listdir("./models/")
 ml = []
 for d in dc:
-        mn = d.split("/")[-1]
-        ml.append(mn)
+        if ".pt" in d:
+          mn = d.split("/")[-1]
+          ml.append(mn)
 opt.modellist = ml    
 
 if opt.load in opt.modellist:
@@ -219,10 +220,10 @@ def diffusion_run(modelsel, im, o, progress):
     
     o.modelname = modelsel
     
-    print(current_modelname, o.modelname)        
+    #print(current_modelname, o.modelname)        
     
     if o.modelname != current_modelname:
-        fn = "models"+os.sep + opt.modelname
+        fn = "models"+os.sep + o.modelname
         print("loading "+fn)
         dd = load_model(fn)
     
@@ -418,7 +419,7 @@ def diffusion_run(modelsel, im, o, progress):
               
             imout_raw = tensor_to_pil(im[0].clone())  
            
-            im = pprocess(im*2 - 1, opt)
+            im = pprocess(im*2 - 1, o)
             im -= im.min()
             im /= im.max()
             
@@ -435,8 +436,8 @@ def diffusion_run(modelsel, im, o, progress):
 with gr.Blocks() as demo:
     
     imo = gr.State(Image.new('RGB', (768, 768)))
-    opt_ = gr.State(types.SimpleNamespace())
-    opt_ = opt
+    opt_ = gr.State(opt)
+    #opt_ = opt
     opt_.modelname = current_modelname
     
     with gr.Row():
@@ -449,7 +450,7 @@ with gr.Blocks() as demo:
             text_input = gr.Textbox(label="Prompt")
             textw = gr.Slider(minimum=0., maximum=100., value=10., label="Text weight")
         with gr.Column():
-            skip = gr.Slider(minimum=0, maximum=100, value=10, label="Skip")
+            skip = gr.Slider(minimum=0, maximum=opt.steps, value=10, step=1, label="Skip")
             mul = gr.Slider(minimum=0., maximum=1., value=1., label="Noise level")
             weak = gr.Slider(minimum=0., maximum=1., value=0., label="Softness")
         init_image = gr.Image()
@@ -481,54 +482,52 @@ with gr.Blocks() as demo:
     
     # function to apply changed post processing settings to current image
    
-    def pproc(contrast, gamma, saturation, eqhist, unsharp, noise, bil, bils1, bils2):
-        global opt_, imo
-        opt_.contrast = float(contrast)
-        opt_.gamma = float(gamma)
-        opt_.saturation = float(saturation)
-        opt_.eqhist = float(eqhist)
-        opt_.unsharp = float(unsharp)
-        opt_.noise = float(noise)
+    def pproc(o, imo, contrast, gamma, saturation, eqhist, unsharp, noise, bil, bils1, bils2):
+        
+        o.contrast = float(contrast)
+        o.gamma = float(gamma)
+        o.saturation = float(saturation)
+        o.eqhist = float(eqhist)
+        o.unsharp = float(unsharp)
+        o.noise = float(noise)
         
         if bil > 0:
             bil = int(bil*2) + 1
-        opt_.bil = int(bil)
-        opt_.bils1 = int(bils1)    
-        opt_.bils2 = int(bils2)    
+        o.bil = int(bil)
+        o.bils1 = int(bils1)    
+        o.bils2 = int(bils2)    
         
         post_process_status.value = "Postprocessing..."
         imT = TF.to_tensor(imo).unsqueeze(0)*2 - 1
-        imT = pprocess(imT, opt)
+        imT = pprocess(imT, o)
         imT = imT - imT.min()
         imT = imT / imT.max()
         imout = TF.to_pil_image(imT[0])
         post_process_status.value = "Done"
-        return imout, "Done"
+        
+        return imout, o, "Done"
         
     # function to run diffusion based on current settings    
     
-    def run(ms, t, s, m, im, skip, weak):
-        global opt_, imo
+    def run(o, imo, ms, t, s, m, im_in, skip, weak):
         
-        #print("starting run: ",opt_)
-        
-        opt_.textw = float(s)
-        opt_.mul = float(m)
-        opt_.text = t
-        opt_.skip = int(skip)
-        opt_.weak = int(weak*(opt_.steps - opt_.skip - 1))
+        o.modelname = modelsel
+        o.textw = float(s)
+        o.mul = float(m)
+        o.text = t
+        o.skip = int(skip)
+        o.weak = int(weak*(o.steps - o.skip - 1))
         
         process_status.value = "Processing..."
-        for im, imr, i in diffusion_run(ms, im, opt_, progress=gr.Progress()):
-            #print(i)
+        for im, imr, i in diffusion_run(ms, im_in, o, progress=gr.Progress()):
             imo = imr
-            yield im, imr, str(i)     
+            yield im, imr, imo, o, str(i)     
             
     # buttons to trigger diffusion and post processing        
              
-    text_button.click(queue=True, fn=run, inputs=[modelsel, text_input, textw, mul, init_image, skip, weak], outputs=[image_output, image_output_raw, process_status])
+    text_button.click(queue=True, fn=run, inputs=[opt_, imo, modelsel, text_input, textw, mul, init_image, skip, weak], outputs=[image_output, image_output_raw, imo, opt_, process_status])
     
-    proc_button.click(queue=True, fn=pproc, inputs=[contrast, gamma, saturation, eqhist, unsharp, noise, bil, bils1, bils2], outputs=[image_output, post_process_status])
+    proc_button.click(queue=True, fn=pproc, inputs=[opt_, imo, contrast, gamma, saturation, eqhist, unsharp, noise, bil, bils1, bils2], outputs=[image_output, opt_, post_process_status])
 
 demo.queue(concurrency_count=1)
 demo.launch(server_name = "0.0.0.0")
